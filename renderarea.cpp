@@ -150,11 +150,13 @@ public:
                        const QRectF* block,
                        const QRectF* blockSide,
                        const QRectF* dvere=nullptr,
-                       const QRectF* blockDvere=nullptr)
+                       const QRectF* blockDvere=nullptr,
+                       double firtsLineCut=0)
     {
         std::vector<std::unique_ptr<PlacedBoard>> rv;
 
         bool leftSideReached = false;
+        bool firstLine = true;
 
         while(!leftSideReached)
         {
@@ -170,6 +172,7 @@ public:
                 qDebug() << *block << *pb;
                 bool blocked1 = blockDvere && intersect(*blockDvere, *pb) && dvere && !intersect(*dvere, *pb);
                 bool blocked = blocked1 || intersect(*block, *pb);
+                auto tmpStart = start;
                 if( blocked1 ||   blocked ){
                     double cutlen = 0;
                     if(blocked1)
@@ -187,11 +190,22 @@ public:
                 else{
                     start += nextP(*pb);
                 }
+
+                /*if(firstLine && firtsLineCut > 1)
+                {
+                    qDebug() << "firtsLineCut" << *pb;
+                    auto b = pb->takeBoard();
+                    auto bside = b->cutLeftSide(firtsLineCut);
+                    pb = new PlacedBoard(tmpStart, std::move(b), dir);
+                }*/
+
                 rv.emplace_back(pb);
             }
 
             if(rv.empty() || intersect(*blockSide, *rv.back()))
                     leftSideReached = true;
+
+            firstLine = false;
         }
 
         return rv;
@@ -318,7 +332,9 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
 
     placer = std::unique_ptr<Placer>(new Placer(PlacedBoard::Dir::vertical, boardFactory));
     boards = placer->place(QPoint(0,roomV),
-                           &stena.nosnaVnutorna, &stena.prieckaSused);
+                           &stena.nosnaVnutorna, &stena.prieckaSused,
+                           nullptr, nullptr,
+                           300);
 
     for(auto& a : boards)
     {

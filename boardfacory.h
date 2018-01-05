@@ -32,6 +32,21 @@ struct Board
 
       return BoardPtr(tail);
   }
+
+  BoardPtr cutLeftSide(double cutlen)
+  {
+      Q_ASSERT(cutlen > 0);
+      auto tail = new Board;
+
+      *tail = *this;
+      tail->len = cutlen;
+      tail->cutR = true;
+
+      width = width-cutlen;
+      cutL = true;
+
+      return BoardPtr(tail);
+  }
 };
 
 class BoardFactory
