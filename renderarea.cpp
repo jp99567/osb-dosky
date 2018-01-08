@@ -186,18 +186,21 @@ public:
                     boardFactory.stackPush(std::move(b));
                     headSideReached = true;
                     start = lineStart + nextS(*pb);
+                    if(firstLine && firtsLineCut > 1){
+                        start -= QPointF(firtsLineCut,0);
+                    }
                 }
                 else{
                     start += nextP(*pb);
                 }
 
-                /*if(firstLine && firtsLineCut > 1)
+                if(firstLine && firtsLineCut > 1)
                 {
                     qDebug() << "firtsLineCut" << *pb;
                     auto b = pb->takeBoard();
                     auto bside = b->cutLeftSide(firtsLineCut);
                     pb = new PlacedBoard(tmpStart, std::move(b), dir);
-                }*/
+                }
 
                 rv.emplace_back(pb);
             }
@@ -334,7 +337,7 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
     boards = placer->place(QPoint(0,roomV),
                            &stena.nosnaVnutorna, &stena.prieckaSused,
                            nullptr, nullptr,
-                           300);
+                           240);
 
     for(auto& a : boards)
     {
@@ -354,5 +357,6 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
     {
         a->draw(painter);
     }
+
 }
 

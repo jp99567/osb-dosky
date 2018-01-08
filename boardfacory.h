@@ -64,6 +64,12 @@ class BoardFactory
             return rv;
         }
 
+        if(count-- == 74){
+            auto rv = new Board;
+            rv->len -= 1500;
+            return BoardPtr(rv);
+        }
+
         if(count--)
             return BoardPtr(new Board);
          return nullptr;
