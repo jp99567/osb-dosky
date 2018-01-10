@@ -185,8 +185,9 @@ public:
                     pb = new PlacedBoard(start, std::move(bt), dir);
                     boardFactory.stackPush(std::move(b));
                     headSideReached = true;
+                    qDebug() << "headSideReached";
                     start = lineStart + nextS(*pb);
-                    if(firstLine && firtsLineCut > 1){
+                    if(firstLine && firtsLineCut > 0){
                         start -= QPointF(firtsLineCut,0);
                     }
                 }
@@ -194,7 +195,7 @@ public:
                     start += nextP(*pb);
                 }
 
-                if(firstLine && firtsLineCut > 1)
+                if(firstLine && firtsLineCut > 0)
                 {
                     qDebug() << "firtsLineCut" << *pb;
                     auto b = pb->takeBoard();
@@ -205,8 +206,10 @@ public:
                 rv.emplace_back(pb);
             }
 
-            if(rv.empty() || intersect(*blockSide, *rv.back()))
+            if(rv.empty() || intersectSide(*blockSide, *rv.back())){
                     leftSideReached = true;
+                    qDebug() << "leftSideReached";
+            }
 
             firstLine = false;
         }
@@ -247,6 +250,7 @@ private:
             auto irect = a.intersected(b);
             auto len = dir == PlacedBoard::Dir::horizontal ?
                         irect.height() : irect.width();
+            qDebug() << "intersectSide" << a << b;
             return len > 0.1;
         }
         return false;
@@ -276,7 +280,7 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
     constexpr double dilat = 10;
     constexpr double roomV = 5140-2*dilat;
     constexpr double room1H = 4330-2*dilat;
-    constexpr double room2H = 4650-2*dilat;
+    constexpr double room2H = /*4650*/4590-2*dilat;
     constexpr double wallWidth = 180+2*dilat;
     constexpr double roomsH = room1H + wallWidth + room2H;
     constexpr double doorOfset = 50+dilat;

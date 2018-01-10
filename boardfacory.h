@@ -56,7 +56,6 @@ class BoardFactory
   public:
     BoardPtr aquire()
     {
-        qDebug() << "stack empty" << stack.empty();
         if(!stack.empty()){
             auto rv = std::move(stack.top());
             stack.pop();
@@ -64,15 +63,20 @@ class BoardFactory
             return rv;
         }
 
-        if(count-- == 74){
+        if(count == 74){
+            count--;
             auto rv = new Board;
             rv->len -= 1500;
             return BoardPtr(rv);
         }
 
-        if(count--)
+        if(count--){
+            qDebug() << "boards left" << count;
             return BoardPtr(new Board);
-         return nullptr;
+        }
+
+        qCritical() << "no more boards";
+        return nullptr;
     }
 
     void stackPush(BoardPtr&& board)
