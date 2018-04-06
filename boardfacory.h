@@ -59,7 +59,6 @@ class BoardFactory
         if(!stack.empty()){
             auto rv = std::move(stack.top());
             stack.pop();
-            qDebug() << "pop" << rv->len << rv->width;
             return rv;
         }
 
@@ -71,7 +70,6 @@ class BoardFactory
         }
 
         if(count--){
-            qDebug() << "boards left" << count;
             return BoardPtr(new Board);
         }
 
@@ -81,7 +79,6 @@ class BoardFactory
 
     void stackPush(BoardPtr&& board)
     {
-        qDebug() << "push" << board->len << board->width;
         stack.push(std::move(board));
     }
 };

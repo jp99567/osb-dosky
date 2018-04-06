@@ -47,12 +47,13 @@ public:
 
     void draw(QPainter& painter)
     {
-        qDebug() << *static_cast<QRectF*>(this);
         painter.drawRect(*this);
 
         constexpr double dekorDist = 20;
-        if(width() < 2*dekorDist || height() < 2*dekorDist)
+        if(width() < 2*dekorDist || height() < 2*dekorDist){
+            qDebug() << "uzky obdlznik " << static_cast<const QRectF*>(this);
             return;
+        }
 
         QPointF A(topLeft()+QPointF(dekorDist,dekorDist));
         QPointF B(topRight()-QPointF(dekorDist,-dekorDist));
@@ -158,18 +159,22 @@ public:
         bool leftSideReached = false;
         bool firstLine = true;
 
+        int riadok=1;
+
         while(!leftSideReached)
         {
             QPointF lineStart = start;
             bool headSideReached = false;
+            int cislo = 1;
             while(!headSideReached)
             {
                 auto b = boardFactory.aquire();
-                if(!b)
+                if(!b){
+                    qCritical() << "nie su dosky";
                     return rv;
+                }
 
                 auto pb = new PlacedBoard(start, std::move(b), dir);
-                qDebug() << *block << *pb;
                 bool blocked1 = blockDvere && intersect(*blockDvere, *pb) && dvere && !intersect(*dvere, *pb);
                 bool blocked = blocked1 || intersect(*block, *pb);
                 auto tmpStart = start;
@@ -185,7 +190,6 @@ public:
                     pb = new PlacedBoard(start, std::move(bt), dir);
                     boardFactory.stackPush(std::move(b));
                     headSideReached = true;
-                    qDebug() << "headSideReached";
                     start = lineStart + nextS(*pb);
                     if(firstLine && firtsLineCut > 0){
                         start -= QPointF(firtsLineCut,0);
@@ -197,21 +201,22 @@ public:
 
                 if(firstLine && firtsLineCut > 0)
                 {
-                    qDebug() << "firtsLineCut" << *pb;
                     auto b = pb->takeBoard();
                     auto bside = b->cutLeftSide(firtsLineCut);
                     pb = new PlacedBoard(tmpStart, std::move(b), dir);
                 }
 
+                qInfo() << riadok << cislo << *static_cast<const QRectF*>(pb);
                 rv.emplace_back(pb);
+                ++cislo;
             }
 
             if(rv.empty() || intersectSide(*blockSide, *rv.back())){
                     leftSideReached = true;
-                    qDebug() << "leftSideReached";
             }
 
             firstLine = false;
+            ++riadok;
         }
 
         return rv;
@@ -250,7 +255,6 @@ private:
             auto irect = a.intersected(b);
             auto len = dir == PlacedBoard::Dir::horizontal ?
                         irect.height() : irect.width();
-            qDebug() << "intersectSide" << a << b;
             return len > 0.1;
         }
         return false;
@@ -337,6 +341,7 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
                         Qt::FlatCap, Qt::MiterJoin));
     painter.setBrush(QBrush{Qt::cyan, Qt::BrushStyle::NoBrush});
 
+    qDebug() << "SPODNA";
     placer = std::unique_ptr<Placer>(new Placer(PlacedBoard::Dir::vertical, boardFactory));
     boards = placer->place(QPoint(0,roomV),
                            &stena.nosnaVnutorna, &stena.prieckaSused,
@@ -352,6 +357,7 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
                         Qt::FlatCap, Qt::MiterJoin));
     painter.setBrush(QBrush{Qt::cyan, Qt::BrushStyle::NoBrush});
 
+    qDebug() << "VRCHNA";
     placer = std::unique_ptr<Placer>(new Placer(PlacedBoard::Dir::horizontal, boardFactory));
     boards = placer->place(QPoint(0,0),
                                 &stena.prieckaSused, &stena.nosnaVonkajsia,
