@@ -180,14 +180,21 @@ public:
                 auto tmpStart = start;
                 if( blocked1 ||   blocked ){
                     double cutlen = 0;
-                    if(blocked1)
+                    if(blocked1){
                         cutlen = cut(*pb, *blockDvere);
-                    else
+                    }
+                    else{
                         cutlen = cut(*pb, *block);
-
+                    }
                     auto b = pb->takeBoard();
                     auto bt = b->cutFw(cutlen);
                     pb = new PlacedBoard(start, std::move(bt), dir);
+                    if(dir == PlacedBoard::Dir::vertical &&
+                       riadok == 6 &&
+                       cislo == 3){
+                        qDebug() << "Spakyho zlom";
+                        b->len += 80;
+                    }
                     boardFactory.stackPush(std::move(b));
                     headSideReached = true;
                     start = lineStart + nextS(*pb);
