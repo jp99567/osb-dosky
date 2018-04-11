@@ -375,5 +375,16 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
         a->draw(painter);
     }
 
+    qDebug() << "VRCHNA2";
+    placer = std::unique_ptr<Placer>(new Placer(PlacedBoard::Dir::horizontal, boardFactory));
+    boards = placer->place(QPoint(room1H+wallWidth,625*2),
+                                &stena.prieckaSused, &stena.nosnaVonkajsia,
+                                &stena.dvere, &stena.prieckaStred);
+
+    for(auto& a : boards)
+    {
+        a->draw(painter);
+    }
+
 }
 
