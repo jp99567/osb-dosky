@@ -9,8 +9,8 @@ using BoardPtr = std::unique_ptr<Board>;
 
 struct Board
 {
-  static constexpr double defLen = 2050;
-  static constexpr double defWidth = 625;
+  static constexpr double defLen = 2750;
+  static constexpr double defWidth = 1200;
   double len = defLen;
   double width = defWidth;
   bool cutH = false;
@@ -52,7 +52,8 @@ struct Board
 class BoardFactory
 {
     std::stack<BoardPtr> stack;
-    int count = 74;
+    static constexpr int count = 7;
+    int left = count;
   public:
     BoardPtr aquire()
     {
@@ -62,14 +63,14 @@ class BoardFactory
             return rv;
         }
 
-        if(count == 74){
-            count--;
+        if(left == count){
+            left--;
             auto rv = new Board;
-            rv->len -= 1500;
+            rv->len -= 0;
             return BoardPtr(rv);
         }
 
-        if(count--){
+        if(left--){
             return BoardPtr(new Board);
         }
 

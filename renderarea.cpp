@@ -51,7 +51,7 @@ public:
 
         constexpr double dekorDist = 20;
         if(width() < 2*dekorDist || height() < 2*dekorDist){
-            qDebug() << "uzky obdlznik " << static_cast<const QRectF*>(this);
+            qDebug() << "uzky obdlznik " << *static_cast<const QRectF*>(this);
             return;
         }
 
@@ -116,42 +116,23 @@ private:
     Dir dir;
 };
 
-struct Steny
-{
-    QRectF dvere;
-    QRectF nosnaVonkajsia;
-    QRectF nosnaVnutorna;
-    QRectF prieckaStred;
-    QRectF prieckaSused;
-};
-
 class Placer
 {
     BoardFactory& boardFactory;
     PlacedBoard::Dir dir;
-    qreal& (QPointF::*fw)() = &QPointF::rx;
-    qreal& (QPointF::*side)() = &QPointF::ry;
-    double factor = 1;
 
 public:
     Placer(PlacedBoard::Dir dir, BoardFactory& boardFactory)
         :boardFactory(boardFactory)
         ,dir(dir)
     {
-        if(dir == PlacedBoard::Dir::vertical)
-        {
-            fw = &QPointF::rx;
-            side = &QPointF::ry;
-        }
     }
 
     using PlacedBoards = std::vector<std::unique_ptr<PlacedBoard>>;
 
     PlacedBoards place(QPointF start,
-                       const QRectF* block,
-                       const QRectF* blockSide,
-                       const QRectF* dvere=nullptr,
-                       const QRectF* blockDvere=nullptr,
+                       const QRectF& block,
+                       const QRectF& blockSide,
                        double firtsLineCut=0)
     {
         std::vector<std::unique_ptr<PlacedBoard>> rv;
@@ -175,26 +156,13 @@ public:
                 }
 
                 auto pb = new PlacedBoard(start, std::move(b), dir);
-                bool blocked1 = blockDvere && intersect(*blockDvere, *pb) && dvere && !intersect(*dvere, *pb);
-                bool blocked = blocked1 || intersect(*block, *pb);
+                bool blocked = intersect(block, *pb);
                 auto tmpStart = start;
-                if( blocked1 ||   blocked ){
-                    double cutlen = 0;
-                    if(blocked1){
-                        cutlen = cut(*pb, *blockDvere);
-                    }
-                    else{
-                        cutlen = cut(*pb, *block);
-                    }
+                if( blocked ){
+                    double cutlen = cut(*pb, block);
                     auto b = pb->takeBoard();
                     auto bt = b->cutFw(cutlen);
                     pb = new PlacedBoard(start, std::move(bt), dir);
-                    if(dir == PlacedBoard::Dir::vertical &&
-                       riadok == 6 &&
-                       cislo == 3){
-                        qDebug() << "Spakyho zlom";
-                        b->len += 80;
-                    }
                     boardFactory.stackPush(std::move(b));
                     headSideReached = true;
                     start = lineStart + nextS(*pb);
@@ -218,7 +186,7 @@ public:
                 ++cislo;
             }
 
-            if(rv.empty() || intersectSide(*blockSide, *rv.back())){
+            if(rv.empty() || intersectSide(blockSide, *rv.back())){
                     leftSideReached = true;
             }
 
@@ -288,42 +256,22 @@ private:
 
 void RenderArea::paintEvent(QPaintEvent * /* event */)
 {
-    constexpr double dilat = 10;
-    constexpr double roomV = 5140-2*dilat;
-    constexpr double room1H = 4330-2*dilat;
-    constexpr double room2H = /*4650*/4590-2*dilat;
-    constexpr double wallWidth = 180+2*dilat;
-    constexpr double roomsH = room1H + wallWidth + room2H;
-    constexpr double doorOfset = 50+dilat;
-    constexpr double doorWith = 900-2*dilat;
+    constexpr double roomV = 5140;
+    constexpr double roomH = 4330; //4600
+    constexpr double wallWidth = 200;
 
     QPainterPath path;
     path.moveTo(-wallWidth, -wallWidth);
-    path.lineTo(roomsH+wallWidth, -wallWidth);
-    path.lineTo(roomsH+wallWidth, roomV+wallWidth);
+    path.lineTo(roomH+wallWidth, -wallWidth);
+    path.lineTo(roomH+wallWidth, roomV+wallWidth);
     path.lineTo(-wallWidth, roomV+wallWidth);
     path.closeSubpath();
-    path.moveTo(0,0);
-    path.lineTo(room1H,0);
-    path.lineTo(room1H,doorOfset);
-    path.lineTo(room1H+wallWidth, doorOfset);
-    path.lineTo(room1H+wallWidth,0);
-    path.lineTo(roomsH,0);
-    path.lineTo(roomsH,roomV);
-    path.lineTo(roomsH-room2H,roomV);
-    path.lineTo(roomsH-room2H, doorWith+doorOfset);
-    path.lineTo(room1H, doorWith+doorOfset);
-    path.lineTo(room1H,roomV);
-    path.lineTo(0,roomV);
-    path.closeSubpath();
 
-    const Steny stena {
-        QRectF(QPoint(room1H,doorOfset), QSizeF(wallWidth,doorWith)),
-        QRectF(QPoint(0,roomV), QSizeF(100e3,100e3)),
-        QRectF(QPoint(0,-wallWidth), QSizeF(100e3,wallWidth)),
-        QRectF (QPoint(room1H,0), QSizeF(wallWidth,100e3)),
-        QRectF (QPoint(roomsH,0), QSizeF(wallWidth,100e3)),
-    };
+    path.moveTo(0,0);
+    path.lineTo(roomH,0);
+    path.lineTo(roomH,roomV);
+    path.lineTo(0, roomV);
+    path.closeSubpath();
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
@@ -335,10 +283,19 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
     painter.setBrush(QBrush{Qt::green, Qt::BrushStyle::FDiagPattern});
     painter.drawPath(path);
 
-    painter.setPen(QPen(Qt::cyan, 0, Qt::SolidLine,
+    painter.setPen(QPen(Qt::gray, 0, Qt::SolidLine,
                         Qt::FlatCap, Qt::MiterJoin));
-    painter.setBrush(QBrush{Qt::cyan, Qt::BrushStyle::FDiagPattern});
-    painter.drawRect(stena.dvere);
+    painter.setBrush(QBrush{Qt::gray, Qt::BrushStyle::DiagCrossPattern});
+
+    painter.drawRect(QRectF(QPointF(0,0), QSizeF(90, roomV)));
+
+    QPointF trampos(810,0);
+    while( trampos.x() < roomH)
+    {
+        QRectF tram(trampos, QSizeF(180, roomV));
+        painter.drawRect(tram);
+        trampos.rx() += 900;
+    }
 
     BoardFactory boardFactory;
     std::unique_ptr<Placer> placer;
@@ -349,42 +306,16 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
     painter.setBrush(QBrush{Qt::cyan, Qt::BrushStyle::NoBrush});
 
     qDebug() << "SPODNA";
-    placer = std::unique_ptr<Placer>(new Placer(PlacedBoard::Dir::vertical, boardFactory));
-    boards = placer->place(QPoint(0,roomV),
-                           &stena.nosnaVnutorna, &stena.prieckaSused,
-                           nullptr, nullptr,
-                           240);
-
-    for(auto& a : boards)
-    {
-        a->draw(painter);
-    }
-
-    painter.setPen(QPen(Qt::blue, 0, Qt::SolidLine,
-                        Qt::FlatCap, Qt::MiterJoin));
-    painter.setBrush(QBrush{Qt::cyan, Qt::BrushStyle::NoBrush});
-
-    qDebug() << "VRCHNA";
     placer = std::unique_ptr<Placer>(new Placer(PlacedBoard::Dir::horizontal, boardFactory));
-    boards = placer->place(QPoint(0,0),
-                                &stena.prieckaSused, &stena.nosnaVonkajsia,
-                                &stena.dvere, &stena.prieckaStred);
+    boards = placer->place(QPointF(0,0),
+                           QRectF(QPointF(roomH,0), QSizeF(wallWidth,100e3)),
+                           QRectF(QPointF(0,0), QSizeF(-wallWidth,100e3)), 0);
 
     for(auto& a : boards)
     {
         a->draw(painter);
     }
 
-    qDebug() << "VRCHNA2";
-    placer = std::unique_ptr<Placer>(new Placer(PlacedBoard::Dir::horizontal, boardFactory));
-    boards = placer->place(QPoint(room1H+wallWidth,625*2),
-                                &stena.prieckaSused, &stena.nosnaVonkajsia,
-                                &stena.dvere, &stena.prieckaStred);
-
-    for(auto& a : boards)
-    {
-        a->draw(painter);
-    }
 
 }
 
