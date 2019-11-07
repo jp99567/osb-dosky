@@ -257,7 +257,7 @@ private:
 void RenderArea::paintEvent(QPaintEvent * /* event */)
 {
     constexpr double roomV = 5140;
-    constexpr double roomH = 4330; //4600
+    constexpr double roomH = 4600; //4600
     constexpr double wallWidth = 200;
 
     QPainterPath path;
@@ -283,18 +283,42 @@ void RenderArea::paintEvent(QPaintEvent * /* event */)
     painter.setBrush(QBrush{Qt::green, Qt::BrushStyle::FDiagPattern});
     painter.drawPath(path);
 
-    painter.setPen(QPen(Qt::gray, 0, Qt::SolidLine,
-                        Qt::FlatCap, Qt::MiterJoin));
-    painter.setBrush(QBrush{Qt::gray, Qt::BrushStyle::DiagCrossPattern});
-
-    painter.drawRect(QRectF(QPointF(0,0), QSizeF(90, roomV)));
-
-    QPointF trampos(810,0);
-    while( trampos.x() < roomH)
     {
-        QRectF tram(trampos, QSizeF(180, roomV));
-        painter.drawRect(tram);
-        trampos.rx() += 900;
+        painter.setPen(QPen(Qt::gray, 0, Qt::SolidLine, Qt::FlatCap, Qt::MiterJoin));
+        painter.setBrush(QBrush{Qt::gray, Qt::BrushStyle::DiagCrossPattern});
+        painter.drawRect(QRectF(QPointF(0,0), QSizeF(90, roomV)));
+
+        QPointF trampos(810,0);
+        int tramNr = 1;
+        while( trampos.x() < roomH-180)
+        {
+            qDebug() << "tram" << tramNr++ << trampos;
+            QRectF tram(trampos, QSizeF(180, roomV));
+            painter.drawRect(tram);
+            trampos.rx() += 910;
+        }
+        painter.drawRect(QRectF(QPointF(roomH-90,0), QSizeF(90, roomV)));
+    }
+
+    {
+        painter.setPen(QPen(Qt::black, 0, Qt::SolidLine, Qt::FlatCap, Qt::MiterJoin));
+        painter.setBrush(QBrush{Qt::black, Qt::BrushStyle::SolidPattern});
+        constexpr double michnoR = 60.0;
+
+        auto placeMichno = [&painter](QPointF p){
+          p -= QPointF(michnoR, michnoR);
+          painter.drawEllipse(QRectF(p, QSizeF(2*michnoR,2*michnoR)));
+        };
+
+        placeMichno(QPointF(michnoR,michnoR));
+        QPointF p(michnoR, Board::defWidth / 3);
+        auto michnoNr = 0;
+        while( p.y() < roomV-michnoR) {
+            qDebug() << "michno" << michnoNr++ << p;
+            placeMichno(p);
+            p.ry() += Board::defWidth / 3;
+        }
+        placeMichno(QPointF(michnoR,roomV-michnoR));
     }
 
     BoardFactory boardFactory;
